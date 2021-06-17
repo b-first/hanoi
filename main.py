@@ -1,4 +1,4 @@
-# Brandon Fuerst's Hanoi Game - Compute Player
+# Brandon Fuerst's Hanoi Game - Computer Player
 
 def setUpStacks(level):
     stack_1 = []
