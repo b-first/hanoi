@@ -73,7 +73,7 @@ def CPUMove(stacks, last_move):
             return move(stacks, 3, 2)
 
 if __name__ == '__main__':
-    level = 4                                       # Number of pieces to play with
+    level = 5                                       # Number of pieces to play with
     if level < 1: print('\nMust be level 1 or higher\n'); exit()
 
     stacks, win_stack = setUpStacks(level)          # Set up the board based on level
