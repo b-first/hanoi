@@ -1,5 +1,4 @@
 import pygame as pg
-from CPU_Player import CPUMove
 
 # Board Vars (global)
 level = 8                           # Number of discs
@@ -99,6 +98,41 @@ def movePiece(disc_move, stick_target_i):
         drawEllipse(disc_num, stack_source)                                     # Turn it from selected (blue) to not
         return 0                                                                # Return 0 to not increment move counter
 
+# Returns true (1) if odd, false (0) if even
+def checkOdd(num):
+    return num % 2
+
+# CPU Move
+def CPUMove(stacks, last_move):
+    # Get the number top of stack or 0 if empty stack
+    one = getTopPiece(stacks[0])
+    two = getTopPiece(stacks[1])
+    three = getTopPiece(stacks[2])
+    
+    # First move
+    if two == 0 and three == 0:                 # If two and three are empty, then it's the first turn
+        level = len(stacks[0])                  # Check level
+        if checkOdd(level): return 0, 2         # If odd, move 0 to 2
+        elif not checkOdd(level): return 0, 1   # If even, move 0 to 1
+    # Stack 1 Moves
+    if last_move != 0 and one != 0:                                         # last move wasn't to this stack and it has at least one piece
+        if one < two and checkOdd(one) != checkOdd(two): return 0, 1        # stack1 less than stack2 and not both odd or even
+        elif one < three and checkOdd(one) != checkOdd(three): return 0, 2  # stack1 less than stack3 and not both odd or even
+        elif two == 0: return 0, 1                                          # stack 2 is empty
+        elif three == 0: return 0, 2                                        # stack 3 is empty
+    # Stack 2 Moves
+    if last_move != 1 and two != 0:
+        if two < one and checkOdd(two) != checkOdd(one): return 1, 0
+        elif two < three and checkOdd(two) != checkOdd(three): return 1, 2
+        elif one == 0: return 1, 0
+        elif three == 0: return 1, 2
+    # Stack 3 Moves
+    if last_move != 2 and 3 != 0:
+        if three < two and checkOdd(three) != checkOdd(two): return 2, 1
+        elif three < one and checkOdd(three) != checkOdd(one): return 2, 0
+        elif one == 0: return 2, 0
+        elif two == 0: return 2, 1
+
 # Set up the game
 def resetGame():
     # Clear game vars
@@ -180,11 +214,10 @@ while True:
             disc_move = None                                # Clear variable after move
             stack_i = None 
     
-    clock.tick(120)                  # Game FPS
+    clock.tick(1000000)                  # Game FPS
 
     time_current = round((pg.time.get_ticks() - time_reset)/1000, 0)    # Millisecs since start, minus last reset
     if time_current > time_played and not win_flag:                     # Update time each second until win
         time_played = time_current
         print(time_played)
     pg.display.update()
-    
