@@ -1,6 +1,5 @@
 import pygame as pg
 from CPU_Player import CPUMove
-import time
 
 # Board Vars (global)
 level = 8                           # Number of discs
@@ -10,16 +9,17 @@ stick_x_list = [window_width*.25, window_width*.5, window_width*.75]    # List o
 disc_width_max = (window_width*.25) - 5                                 # Max disc width just less than distance between sticks
 disc_height = 15
 stacks = [dict(), dict(), dict()]   # [stack0, stack1, stack2] - {disc_number: rect}
+
 # Game Vars (global)
 disc_move = None                    # Default none, used to track whether user has selected a piece to move [source stack index, top piece's number]
 move_counter = 0
 win_flag = False
-human_player = False
+human_player = True
 stack_i = None                      # Track stack source or target for a move
 last_move = 0                       # Track last move for CPU's next input
 CPU_target = None                   # CPU move's target stick (index)
 time_played = 0
-time_reset = 0
+time_reset = 0                      # Time reset (to subtract from overall after reset)
 
 # RGB Colors (global)
 BLACK = (0, 0, 0)
@@ -146,8 +146,14 @@ while True:
         if event.type == pg.QUIT:                                       # If X-ed out, exit the game and terminate the program
             pg.quit()
             quit()
-        elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:     # If Enter is pressed, reset the game
-            resetGame()
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_RETURN:     # If Enter is pressed, reset the game
+                resetGame()
+            elif event.key == pg.K_h:
+                human_player = True
+            elif event.key == pg.K_c:
+                resetGame()
+                human_player = False
         
         # Human Player Inputs
         if human_player and not win_flag and event.type == pg.KEYDOWN:  # If human player and didn't win yet and a key was pressed, check the input
