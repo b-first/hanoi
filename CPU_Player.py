@@ -6,10 +6,6 @@ def getTopPiece(stack):
 def checkOdd(num):
     return num % 2
 
-#def move(stacks, start, end):
-#    stacks[end-1].append(stacks[start-1].pop())
-#    return end-1
-
 # CPU Move
 def CPUMove(stacks, last_move):
     # Get the number top of stack or 0 if empty stack
