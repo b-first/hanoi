@@ -2,7 +2,7 @@ import pygame as pg
 from CPU_Player import CPUMove
 import time
 
-# Game Vars (global)
+# Board Vars (global)
 level = 8                           # Number of discs
 window_width = 500
 window_height = 500
@@ -10,13 +10,13 @@ stick_x_list = [window_width*.25, window_width*.5, window_width*.75]    # List o
 disc_width_max = (window_width*.25) - 5                                 # Max disc width just less than distance between sticks
 disc_height = 15
 stacks = [dict(), dict(), dict()]   # [stack0, stack1, stack2] - {disc_number: rect}
-# User Vars (global)
+# Game Vars (global)
 disc_move = None                    # Default none, used to track whether user has selected a piece to move [source stack index, top piece's number]
 move_counter = 0
 win_flag = False
 human_player = False
-last_move = 0                       # Track CPU's last move
-CPU_source = None                   # CPU move's source stick (index)
+stack_i = None                      # Track stack source or target for a move
+last_move = 0                       # Track last move for CPU's next input
 CPU_target = None                   # CPU move's target stick (index)
 time_played = 0
 time_reset = 0
@@ -109,6 +109,10 @@ def resetGame():
     global move_counter; move_counter = 0
     global time_reset; time_reset = pg.time.get_ticks()
     global time_played; time_played = 0
+    global last_move; last_move = 0
+    global stack_i; stack_i = None
+    global CPU_target; CPU_target = None
+    global disc_move; disc_move = None
     window.fill(BACKGROUND)
     # Draw the 3 sticks
     pg.draw.line(window, BLACK, (stick_x_list[0], window_height*.2), (stick_x_list[0], window_height))
@@ -125,11 +129,11 @@ win_stack = list(stacks[0].keys())  # List to define winning state
 while True:
 
     # Update move counter drawn on surface
-    pg.draw.rect(window, WHITE, (0, 0, window_width, 80))                   # Draw rect to cover previous count - left, top, width, height
+    pg.draw.rect(window, WHITE, (0, 0, window_width, 80))                       # Draw rect to cover previous count - left, top, width, height
     move_counter_str = str(move_counter)
     move_counter_len = len(move_counter_str)
-    text_move_counter = text_font.render(move_counter_str, True, BLACK)    # Create a text surface
-    window.blit(text_move_counter, (window_width/2-(10*move_counter_len), 40))                 # Draw the text surface
+    text_move_counter = text_font.render(move_counter_str, True, BLACK)         # Create a text surface
+    window.blit(text_move_counter, (window_width/2-(10*move_counter_len), 40))  # Draw the text surface
 
     # Check if player won and print win message
     if list(stacks[2].keys()) == win_stack:                                 # If the 3rd stack has the same keys as the original stack
@@ -139,50 +143,42 @@ while True:
     
     # Get pygame events (like key presses)
     for event in pg.event.get():
-
         if event.type == pg.QUIT:                                       # If X-ed out, exit the game and terminate the program
             pg.quit()
             quit()
         elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:     # If Enter is pressed, reset the game
-            last_move = 0
-            CPU_source = None
-            CPU_target = None
             resetGame()
         
-        if win_flag: continue                                           # If already won, don't check for moves
+        # Human Player Inputs
+        if human_player and not win_flag and event.type == pg.KEYDOWN:  # If human player and didn't win yet and a key was pressed, check the input
+            if event.key == pg.K_LEFT: stack_i = 0                      # Stack index, tracks which stack to select or move
+            elif event.key == pg.K_DOWN: stack_i = 1
+            elif event.key == pg.K_RIGHT: stack_i = 2
 
-        if human_player:
-            if event.type == pg.KEYDOWN:                                    # If a button is pressed
-                # Stack index
-                if event.key == pg.K_LEFT: stack_i = 0
-                elif event.key == pg.K_DOWN: stack_i = 1
-                elif event.key == pg.K_RIGHT: stack_i = 2
-                else: continue
-                
-                if not disc_move:                                   # If no piece selected, select it
-                    disc_move = selectPiece(stack_i)
-                else:                                               # If piece selected, move it
-                    move_counter += movePiece(disc_move, stack_i)   # Increment move counter (0 if failed move)
-                    disc_move = None                                # Clear variable after move
-
+    # CPU Player Inputs
     if not human_player and not win_flag:
-        if CPU_source is None and CPU_target is None:               # If CPU needs to choose a move
-            CPU_source, CPU_target = CPUMove(stacks, last_move)
-        elif CPU_source is None:                                    # If piece is selected but not moved yet
-            move_counter += movePiece(disc_move, CPU_target)
-            last_move = CPU_target
+        if stack_i is None and CPU_target is None:              # If CPU needs to choose a move
+            stack_i, CPU_target = CPUMove(stacks, last_move)    # Returns source and target stack indexes
+        else:                                                   # If piece already selected
+            stack_i = CPU_target
             CPU_target = None
-            disc_move = None
-        else:                                                       # If piece isn't selected yet
-            disc_move = selectPiece(CPU_source)
-            CPU_source = None
     
-    clock.tick(60)                  # Game FPS
+    # Select or Move a piece
+    if stack_i is not None:                                 # Could be None if player hasn't selected a move yet
+        if not disc_move:                                   # Select the piece
+            disc_move = selectPiece(stack_i)
+            stack_i = None                                  # Clear variable after selection
+        else:                                               # Move the piece
+            move_counter += movePiece(disc_move, stack_i)   # Returns 0 if failed move
+            last_move = stack_i                             # Track the previous move for the CPU's next move input
+            disc_move = None                                # Clear variable after move
+            stack_i = None 
+    
+    clock.tick(120)                  # Game FPS
 
-    time_current = round((pg.time.get_ticks() - time_reset)/1000, 0)
-    if time_current > time_played and not win_flag:
+    time_current = round((pg.time.get_ticks() - time_reset)/1000, 0)    # Millisecs since start, minus last reset
+    if time_current > time_played and not win_flag:                     # Update time each second until win
         time_played = time_current
         print(time_played)
     pg.display.update()
-    #time.sleep(.01)
-
+    
